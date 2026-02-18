@@ -139,10 +139,20 @@
         </main>
     </div>
 
+<!--        {
+                id: '',
+                name: '',
+                icon: '',
+                links: [
+                    { title: '', url: '', desc: '' },
+                    { title: '', url: '', desc: '' },
+                    { title: '', url: '', desc: '' },
+                    { title: '', url: '', desc: '' },
+                ]
+            },-->
+
     <script>
         const { createApp, ref, computed } = Vue;
-
-<!-- { title: '', url: '', desc: '' }, -->
 
         const bookmarksData = [
             {
@@ -228,7 +238,22 @@
                     { title: 'CnGal 中文GalGame资料站', url: 'https://www.cngal.org/', desc: '' },
                     { title: '新：誠也の部屋', url: 'https://seiya-saiga.com/', desc: '' },
                 ]
-            }
+            },
+            {
+                id: 'galgame-tools',
+                name: '旮旯工具',
+                icon: 'ph-gear',
+                links: [
+                    { title: '手机模拟器下载', url: 'https://pan.t-satoru.top/s3b/Emulators', desc: '' },
+                    { title: 'Locale-Emulator', url: 'https://github.com/xupefei/Locale-Emulator', desc: 'LE转区工具' },
+                    { title: 'Magpie', url: 'https://github.com/Blinue/Magpie', desc: '使游戏窗口全屏显示' },
+                    { title: '团子模拟器', url: 'https://translator.dango.cloud/', desc: '' },
+                    { title: 'LunaTranslator', url: 'https://docs.lunatranslator.org/zh/', desc: '' },
+                    { title: '御坂翻译器', url: 'https://github.com/hanmin0822/MisakaTranslator', desc: '' },
+                    { title: 'GARbro', url: 'https://github.com/morkt/GARbro', desc: 'Visual Novels resource browser' },
+
+                ]
+            },
         ];
 
         createApp({
