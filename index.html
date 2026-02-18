@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>老旮の收藏馆</title>
+    <!-- Tailwind CSS (样式库) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue.js (逻辑框架) -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Phosphor Icons (图标库) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        /* 自定义滚动条样式 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        html { scroll-behavior: smooth; }
+        [v-cloak] { display: none; }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        dark: '#0f172a',
+                        card: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-dark dark:text-slate-200 transition-colors duration-300">
+
+    <div id="app" v-cloak class="flex h-screen overflow-hidden">
+
+        <!-- 左侧侧边栏 -->
+        <aside class="w-64 flex-shrink-0 bg-white dark:bg-card border-r border-slate-200 dark:border-slate-700 hidden md:flex flex-col z-20">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-700">
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+                    老旮の收藏馆
+                </h1>
+                <p class="text-xs text-slate-400 mt-1"></p>
+            </div>
+            
+            <nav class="flex-1 overflow-y-auto p-4 space-y-1">
+                <a v-for="(cat, index) in categories" 
+                   :href="'#' + cat.id"
+                   class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-700"
+                   :class="activeCategory === cat.id ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'">
+                    <i :class="cat.icon || 'ph-hash'" class="ph text-lg"></i>
+                    {{ cat.name }}
+                    <span class="ml-auto text-xs bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-full text-slate-500">
+                        {{ cat.links.length }}
+                    </span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 主内容区域 -->
+        <main class="flex-1 flex flex-col h-full relative">
+            
+            <!-- 顶部搜索栏 -->
+            <header class="bg-white/80 dark:bg-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 p-4 sticky top-0 z-10">
+                <div class="max-w-5xl mx-auto w-full flex items-center gap-4">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-2xl">
+                        <i class="ph ph-list"></i>
+                    </button>
+                    <div class="relative flex-1">
+                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" 
+                               v-model="searchQuery" 
+                               placeholder="搜索书签..." 
+                               class="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                    </div>
+                </div>
+            </header>
+
+            <!-- 内容列表 -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-8 scroll-pt-24">
+                <div class="max-w-6xl mx-auto space-y-12">
+                    
+                    <!-- 搜索结果视图 -->
+                    <div v-if="searchQuery">
+                        <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                            <i class="ph ph-magnifying-glass"></i> 搜索结果
+                        </h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            <a v-for="link in filteredLinks" :href="link.url" target="_blank" 
+                               class="group bg-white dark:bg-card p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-blue-400 transition-all duration-200 flex flex-col h-full">
+                                <div class="flex items-start justify-between mb-2">
+                                    <div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xl overflow-hidden shrink-0">
+                                        <!-- 优先使用 link.icon (本地路径)，若无则使用 favicon.im -->
+                                        <img :src="link.icon || 'https://favicon.im/' + link.url" 
+                                             loading="lazy" 
+                                             class="w-6 h-6 object-contain" 
+                                             @error="(e) => e.target.src='https://api.dicebear.com/7.x/initials/svg?seed=' + link.title">
+                                    </div>
+                                    <i class="ph ph-arrow-up-right text-slate-300 group-hover:text-blue-500 transition-colors"></i>
+                                </div>
+                                <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-1 line-clamp-1">{{ link.title }}</h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{{ link.desc || link.url }}</p>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 正常分类视图 -->
+                    <div v-else v-for="cat in categories" :key="cat.id" :id="cat.id" class="scroll-mt-24">
+                        <div class="flex items-center gap-2 mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">
+                            <i :class="cat.icon || 'ph-folder'" class="text-xl text-blue-500"></i>
+                            <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100">{{ cat.name }}</h2>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            <a v-for="link in cat.links" :href="link.url" target="_blank" 
+                               class="group bg-white dark:bg-card p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:-translate-y-1 hover:border-blue-400 transition-all duration-200 flex flex-col h-full">
+                                <div class="flex items-start justify-between mb-2">
+                                    <div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xl overflow-hidden shrink-0">
+                                        <!-- 优先使用 link.icon (本地路径)，若无则使用 favicon.im -->
+                                        <img :src="link.icon || 'https://favicon.im/' + link.url" 
+                                             loading="lazy" 
+                                             class="w-6 h-6 object-contain" 
+                                             @error="(e) => e.target.src='https://api.dicebear.com/7.x/initials/svg?seed=' + link.title">
+                                    </div>
+                                    <i class="ph ph-arrow-up-right text-slate-300 group-hover:text-blue-500 transition-colors"></i>
+                                </div>
+                                <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-1 line-clamp-1 group-hover:text-blue-500 transition-colors">{{ link.title }}</h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 break-all">{{ link.desc || link.url }}</p>
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+<!-- { title: '', url: '', desc: '' }, -->
+
+        const bookmarksData = [
+            {
+                id: 'daily',
+                name: '常用推荐',
+                icon: 'ph-star',
+                links: [
+                    { title: 'GitHub', url: 'https://github.com', desc: '世界最大同性の交友♂网站' },
+                    { title: 'GitHub镜像站', url: 'https://bgithub.xyz/', desc: '' },
+                    { title: 'Bilibili', url: 'https://www.bilibili.com', desc: '干杯' },
+                    { title: 'YouTube', url: 'https://youtube.com', desc: '油管' },
+                ]
+            },
+            {
+                id: 'galgame-recourse',
+                name: '旮旯资源站',
+                icon: 'ph-heartbeat',
+                links: [
+                    { title: '绯月ScarletMoon', url: 'https://bbs.kfpromax.com/index.php', desc: 'KF', icon: 'img/kfpromax.ico'},
+                    { title: 'GGBases', url: 'https://ggbases.dlgal.com/', desc: '磁力资源' },
+                    { title: 'Hentai Sharing', url: 'https://hentai-sharing.net/', desc: '' },
+                    { title: 'Anime-Sharing Community', url: 'https://anime-sharing.com/', desc: '' },
+                    { title: '鲲galgame论坛', url: 'https://kungal.com', desc: '' },
+                    { title: '梓澪の妙妙屋', url: 'https://zi1.cc/', desc: '备用网址:zi6.cc、gal.games、get.galgame.ing、zi4.cc、zi8.cc、gal.ga' },
+                    { title: '初音的青葱', url: 'https://www.fufugal.com/', desc: '发布页:xygalgame.com' },
+                    { title: 'TouchGAL', url: 'https://www.touchgal.top/', desc: '' },
+                    { title: 'LyCorisGal', url: 'https://www.lycorisgal.com/', desc: '' },
+                    { title: '绮梦ACG', url: 'https://acgs.one/', desc: '' },
+                    { title: '稻荷GAL', url: 'https://inarigal.net/', desc: '' },
+                    { title: 'Faustの旧作館', url: 'https://www.erogame.space/', desc: '', icon: "img/faust.ico"},
+                    { title: '失落の小站', url: 'https://www.shinnku.com/', desc: '' },
+                    { title: '量子ACG', url: 'https://lzacg.org/', desc: '' },
+                    { title: 'YAAS', url: 'https://alist-public.imoutoheaven.org/', desc: '大佬做的OD仓库' },
+                    { title: 'ZodGame', url: 'https://zodgame.xyz/', desc: '' },
+                    { title: '花火学园', url: 'https://www.sayhanabi.net/', desc: '' },
+                    { title: '星空论坛', url: 'https://bbs2.seikuu.com/', desc: '' },
+                    { title: '2DJGAME', url: 'https://bbs4.2djgame.net/home/forum.php', desc: '', icon: 'img/2djgame.ico'},
+                    { title: 'KDays论坛', url: 'https://bbs2.kdays.net/', desc: '备用网址:bbs.acgn.at、b.schale.moe' },
+                    { title: '澄空学园', url: 'https://bbs.sumisora.net/', desc: '' },
+                    { title: 'galgame藏经阁', url: 'https://www.galgameacgjohn.top/', desc: '', icon: "img/galgameacgjohn.ico"},
+                    { title: '维咔VikACG', url: 'https://www.vikacg.com/post', desc: '' },
+                    { title: '05的资源小站', url: 'https://05fx.022016.xyz/', desc: '' },
+                    { title: '小鳥遊暁の会员制餐厅', url: 'https://t-satoru.top/', desc: '' },
+                    { title: 'Galgamer', url: 'https://galgamer.moe/', desc: '' },
+                    { title: '沧水网盘', url: 'https://pan.cangshui.net/', desc: '主要为ONS资源，密码是god' },
+                    { title: '喵窝', url: 'https://galgame5.rssing.com/chan-51243512/index-latest.php', desc: '', icon: 'img/miaowo.ico'},
+                    { title: 'GAL图书馆', url: 'https://gallibrary.pw/', desc: '' },
+                    { title: '萤ノ光', url: 'https://yinghu.netlify.app/', desc: '' },
+                    { title: '喵源领域', url: 'https://www.nyantaku.com/', desc: '' },
+                    { title: '晴空咖啡馆', url: 'https://aozoracafe.com/', desc: '' },
+                    { title: 'Hikarinagi', url: 'https://www.hikarinagi.com/', desc: '' },
+                    { title: 'NekoGAL', url: 'https://www.nekogal.com/', desc: '' },
+                    { title: 'Mikocon', url: 'https://www.mikocon.com/', desc: '' },
+                    { title: '黄油聚集地', url: 'https://t.me/acg_nsfw', desc: '' },
+                    { title: 'Galworld', url: 'https://acgngames.net/', desc: '' },
+
+                ]
+            },
+            {
+                id: 'galgame-patch',
+                name: '旮旯补丁站',
+                icon: 'ph-bandaids',
+                links: [
+                    { title: '2DFan', url: 'https://2dfan.com/', desc: '备用域名:acgfan.top、2dfdf.de、2dfmax.top、fan2d.top' },
+                    { title: '2DFan域名发布页', url: 'https://github.com/2dfan/domains', desc: '' },
+                    { title: '御爱同盟', url: 'https://www.ai2.moe/', desc: '' },
+                    { title: '鲲 Galgame 补丁', url: 'https://www.moyu.moe/', desc: '' },
+                    { title: '新：誠也の部屋', url: 'https://seiya-saiga.com/', desc: 'GAL攻略、存档' },
+
+                ]
+            },
+            {
+                id: 'galgame-news',
+                name: '旮旯讯息',
+                icon: 'ph-newspaper',
+                links: [
+                    { title: 'Getchu.com', url: 'https://www.getchu.com/', desc: 'Getchu' },
+                    { title: 'VNDB', url: 'https://vndb.org/', desc: '视觉小说数据库' },
+                    { title: '2DFan', url: 'https://2dfan.com/', desc: '' },
+                    { title: '月幕Galgame', url: 'https://www.ymgal.games/', desc: '' },
+                    { title: 'エロゲー批評空間', url: 'https://erogamescape.dyndns.org/', desc: '批评空间' },
+                    { title: 'Plum\'s Blog', url: 'https://plumz.me/', desc: '' },
+                    { title: 'CnGal 中文GalGame资料站', url: 'https://www.cngal.org/', desc: '' },
+                    { title: '新：誠也の部屋', url: 'https://seiya-saiga.com/', desc: '' },
+                ]
+            }
+        ];
+
+        createApp({
+            setup() {
+                const categories = ref(bookmarksData);
+                const searchQuery = ref('');
+                const mobileMenuOpen = ref(false);
+                const activeCategory = ref('');
+
+                const filteredLinks = computed(() => {
+                    if (!searchQuery.value) return [];
+                    const query = searchQuery.value.toLowerCase();
+                    const results = [];
+                    categories.value.forEach(cat => {
+                        cat.links.forEach(link => {
+                            if (link.title.toLowerCase().includes(query) || 
+                                (link.desc && link.desc.toLowerCase().includes(query)) ||
+                                link.url.toLowerCase().includes(query)) {
+                                results.push({ ...link, category: cat.name });
+                            }
+                        });
+                    });
+                    return results;
+                });
+
+                return { categories, searchQuery, mobileMenuOpen, filteredLinks, activeCategory };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
