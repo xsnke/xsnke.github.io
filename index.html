@@ -2,22 +2,23 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>老旮の收藏馆</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         html { scroll-behavior: smooth; }
         [v-cloak] { display: none; }
+        /* 避免移动端点击高亮 */
+        * { -webkit-tap-highlight-color: transparent; }
     </style>
     <script>
         tailwind.config = {
-            darkMode: 'class', // 明确指定使用 class 模式切换暗黑
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: { primary: '#3b82f6', dark: '#0f172a', card: '#1e293b' }
@@ -26,16 +27,24 @@
         }
     </script>
 </head>
-<body class="bg-slate-50 text-slate-800 dark:bg-dark dark:text-slate-200 transition-colors duration-500 font-sans">
+<body class="bg-slate-50 text-slate-800 dark:bg-dark dark:text-slate-200 transition-colors duration-500 font-sans antialiased">
 
-    <div id="app" v-cloak class="flex h-screen overflow-hidden">
+    <div id="app" v-cloak class="flex h-screen overflow-hidden relative">
 
-        <!-- 左侧侧边栏 -->
-        <aside class="w-64 flex-shrink-0 bg-white dark:bg-card border-r border-slate-200 dark:border-slate-700 hidden md:flex flex-col z-20">
-            <div class="p-6 border-b border-slate-100 dark:border-slate-700">
-                <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+        <!-- 移动端遮罩 -->
+        <div v-if="isMenuOpen" @click="isMenuOpen = false" 
+             class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 md:hidden transition-opacity"></div>
+
+        <!-- 侧边栏 (响应式抽屉) -->
+        <aside :class="isMenuOpen ? 'translate-x-0' : '-translate-x-full'" 
+               class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-card border-r border-slate-200 dark:border-slate-700 z-50 transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:flex flex-col flex-shrink-0">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                <h1 class="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
                     老旮の收藏馆
                 </h1>
+                <button @click="isMenuOpen = false" class="md:hidden text-slate-400">
+                    <i class="ph ph-x text-xl"></i>
+                </button>
             </div>
             
             <nav class="flex-1 overflow-y-auto p-4 space-y-6">
@@ -46,6 +55,7 @@
                     <div class="space-y-1 mt-1">
                         <a v-for="subCat in group.subCategories" 
                            :href="'#' + subCat.id"
+                           @click="isMenuOpen = false"
                            class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-lg transition-all hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:translate-x-1">
                             <i :class="subCat.icon || 'ph-hash'" class="ph text-lg text-blue-500/70"></i>
                             {{ subCat.name }}
@@ -56,20 +66,26 @@
         </aside>
 
         <!-- 主内容区域 -->
-        <main class="flex-1 flex flex-col h-full relative">
+        <main class="flex-1 flex flex-col h-full relative min-w-0">
             <!-- 顶部工具栏 -->
-            <header class="bg-white/80 dark:bg-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 p-4 sticky top-0 z-30">
-                <div class="max-w-5xl mx-auto w-full flex items-center gap-4">
+            <header class="bg-white/80 dark:bg-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 p-3 md:p-4 sticky top-0 z-30">
+                <div class="max-w-5xl mx-auto w-full flex items-center gap-2 md:gap-4">
+                    <!-- 移动端菜单按钮 -->
+                    <button @click="isMenuOpen = true" class="md:hidden p-2 text-slate-600 dark:text-slate-400 active:scale-90 transition-transform">
+                        <i class="ph-bold ph-list text-2xl"></i>
+                    </button>
+
                     <!-- 搜索框 -->
                     <div class="relative flex-1">
                         <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" v-model="searchQuery" placeholder="全局搜索收藏..." 
-                               class="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                        <input type="text" v-model="searchQuery" placeholder="搜索..." 
+                               class="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm md:text-base">
                     </div>
-                    <!-- 主题切换按钮 -->
+
+                    <!-- 主题切换 -->
                     <button @click="toggleTheme" 
-                            class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-yellow-400 hover:ring-2 hover:ring-blue-500 transition-all shadow-sm group">
-                        <i :class="isDark ? 'ph-sun-dim' : 'ph-moon-stars'" class="ph-bold text-xl transition-transform group-active:scale-90"></i>
+                            class="p-2 md:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-yellow-400 hover:ring-2 hover:ring-blue-500 transition-all shadow-sm shrink-0">
+                        <i :class="isDark ? 'ph-sun-dim' : 'ph-moon-stars'" class="ph-bold text-xl"></i>
                     </button>
                 </div>
             </header>
@@ -77,48 +93,48 @@
             <div class="flex-1 overflow-y-auto p-4 md:p-8">
                 <div class="max-w-6xl mx-auto">
                     
-                    <!-- 搜索视图 (略，保持原样) -->
+                    <!-- 搜索视图 -->
                     <div v-if="searchQuery" class="space-y-6">
                         <h2 class="text-lg font-bold flex items-center gap-2 text-blue-500">
                             <i class="ph ph-magnifying-glass"></i> 搜索结果
                         </h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
                             <a v-for="link in filteredLinks" :href="link.url" target="_blank" class="group bg-white dark:bg-card p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:shadow-lg transition-all flex flex-col h-full">
                                 <div class="flex items-start justify-between mb-2">
                                     <img :src="link.icon || 'https://favicon.im/' + link.url" class="w-8 h-8 rounded shrink-0 object-contain" @error="(e) => e.target.src='https://api.dicebear.com/7.x/initials/svg?seed=' + link.title">
                                     <i class="ph ph-arrow-up-right text-slate-300 group-hover:text-blue-500"></i>
                                 </div>
-                                <h3 class="font-bold text-sm mb-1 line-clamp-1 group-hover:text-blue-500">{{ link.title }}</h3>
+                                <h3 class="font-bold text-sm mb-1 line-clamp-1">{{ link.title }}</h3>
                                 <p class="text-xs text-slate-500 line-clamp-2">{{ link.desc || link.url }}</p>
                             </a>
                         </div>
                     </div>
 
-                    <!-- 三级分类视图 (略，保持原样) -->
-                    <div v-else v-for="group in categories" :key="group.id" class="mb-16">
-                        <div class="relative py-8">
+                    <!-- 三级分类视图 -->
+                    <div v-else v-for="group in categories" :key="group.id" class="mb-12 md:mb-16">
+                        <div class="relative py-6 md:py-8">
                             <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200 dark:border-slate-700"></div></div>
                             <div class="relative flex justify-start">
-                                <span class="pr-4 bg-slate-50 dark:bg-dark text-xl font-black text-slate-400 tracking-widest italic uppercase">{{ group.name }}</span>
+                                <span class="pr-4 bg-slate-50 dark:bg-dark text-lg md:text-xl font-black text-slate-400 tracking-widest italic uppercase">{{ group.name }}</span>
                             </div>
                         </div>
 
-                        <div v-for="subCat in group.subCategories" :key="subCat.id" :id="subCat.id" class="scroll-mt-24 mb-10 last:mb-0">
-                            <div class="flex items-center gap-2 mb-6">
-                                <div class="w-1 h-6 bg-blue-500 rounded-full"></div>
-                                <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100">{{ subCat.name }}</h2>
+                        <div v-for="subCat in group.subCategories" :key="subCat.id" :id="subCat.id" class="scroll-mt-20 md:scroll-mt-24 mb-8 md:mb-10 last:mb-0">
+                            <div class="flex items-center gap-2 mb-4 md:mb-6">
+                                <div class="w-1 h-5 md:h-6 bg-blue-500 rounded-full"></div>
+                                <h2 class="text-lg md:text-xl font-bold text-slate-800 dark:text-slate-100">{{ subCat.name }}</h2>
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
                                 <a v-for="link in subCat.links" :href="link.url" target="_blank" 
-                                   class="group bg-white dark:bg-card p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:shadow-xl hover:-translate-y-1 hover:border-blue-400/50 transition-all flex flex-col h-full">
+                                   class="group bg-white dark:bg-card p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:shadow-xl md:hover:-translate-y-1 transition-all flex flex-col h-full">
                                     <div class="flex items-start justify-between mb-3">
-                                        <div class="w-10 h-10 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center p-2 shadow-inner">
+                                        <div class="w-10 h-10 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center p-2">
                                             <img :src="link.icon || 'https://favicon.im/' + link.url" class="w-full h-full object-contain" @error="(e) => e.target.src='https://api.dicebear.com/7.x/initials/svg?seed=' + link.title">
                                         </div>
                                         <i class="ph ph-arrow-up-right text-slate-300 group-hover:text-blue-500 transition-colors"></i>
                                     </div>
-                                    <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-1 line-clamp-1 group-hover:text-blue-500">{{ link.title }}</h3>
+                                    <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-1 text-sm md:text-base line-clamp-1 group-hover:text-blue-500">{{ link.title }}</h3>
                                     <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">{{ link.desc || link.url }}</p>
                                 </a>
                             </div>
@@ -250,10 +266,10 @@
             setup() {
                 const categories = ref(bookmarksData);
                 const searchQuery = ref('');
+                const isMenuOpen = ref(false); // 移动端菜单状态
 
-                // 暗黑模式逻辑
+                // 暗黑模式
                 const isDark = ref(localStorage.getItem('theme') === 'dark');
-                
                 const updateTheme = () => {
                     if (isDark.value) {
                         document.documentElement.classList.add('dark');
@@ -261,7 +277,6 @@
                         document.documentElement.classList.remove('dark');
                     }
                 };
-
                 const toggleTheme = () => {
                     isDark.value = !isDark.value;
                     localStorage.setItem('theme', isDark.value ? 'dark' : 'light');
@@ -287,12 +302,11 @@
                     return results;
                 });
 
-                // 初始化主题
                 onMounted(() => {
                     updateTheme();
                 });
 
-                return { categories, searchQuery, filteredLinks, isDark, toggleTheme };
+                return { categories, searchQuery, filteredLinks, isDark, toggleTheme, isMenuOpen };
             }
         }).mount('#app');
     </script>
