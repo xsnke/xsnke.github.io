@@ -6,7 +6,7 @@
     <title>老旮の收藏馆</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/phosphor-icons/1.4.2/index.min.js"></script>
     <style>
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -83,9 +83,11 @@
                     </div>
 
                     <!-- 主题切换 -->
-                    <button @click="toggleTheme" 
-                            class="p-2 md:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-yellow-400 hover:ring-2 hover:ring-blue-500 transition-all shadow-sm shrink-0">
-                        <i :class="isDark ? 'ph-sun-dim' : 'ph-moon-stars'" class="ph-bold text-xl"></i>
+                                        <button @click="toggleTheme" 
+                            class="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-yellow-400 hover:ring-2 hover:ring-blue-500 transition-all shadow-sm shrink-0 overflow-hidden">
+                        <i v-if="iconsLoaded" :class="isDark ? 'ph-sun-dim' : 'ph-moon-stars'" class="ph-bold text-xl transition-all"></i>
+                        <!-- 图标加载前的降级显示 -->
+                        <span v-else class="text-sm font-bold">{{ isDark ? '☀' : '🌙' }}</span>
                     </button>
                 </div>
             </header>
